@@ -1,5 +1,6 @@
 import org.junit.Test;
 
+import java.lang.management.ThreadMXBean;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -14,8 +15,12 @@ import java.util.concurrent.locks.ReentrantLock;
  * @date:2021/6/9
  */
 public class ThreadTest {
-    //1
+
     public static void main(String[] args) {
+        //testExchanger();//测试两个线程交换数据
+        testLockedThread();//模拟并检测死锁
+    }
+    public  static void testExchanger(){
         final Exchanger<Object> exchanger = new Exchanger<>();//Object为两个线程交换的数据类型
         new Thread(new Runnable() {
             @Override
@@ -51,6 +56,44 @@ public class ThreadTest {
         }, "Thread-B").start();
     }
 
+    public static void testLockedThread(){
+            //第一个线程
+            new Thread(()->{
+                synchronized(Integer.class){
+                    try {
+                        Thread.sleep(1000);
+                        System.out.println("线程1开始获取String锁...");
+                        synchronized (String.class){
+                            System.out.println("线程1获取String锁成功!");
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+            //第二个线程
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    synchronized(String.class){
+                        try {
+                            Thread.sleep(1000);
+                            System.out.println("线程2获取Integer锁...");
+                            synchronized (Integer.class){
+                                System.out.println("线程2获取Integer锁成功!");
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }).start();
+            try {
+                Thread.sleep(100000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+    }
     //2、测试ReentrantLock的公平锁和非公平锁
     @Test
     public void test1() {
@@ -177,6 +220,10 @@ public class ThreadTest {
             LockSupport.unpark(thread);//把许可给thread，此处thread为threadA
         }
     }
-}
+ }
+
+
+
+
 
 }
